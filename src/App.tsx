@@ -1,12 +1,17 @@
 import { RouterProvider } from 'react-router';
 import router from './router';
 import { CurrencyProvider } from './context/currencyContext';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 function App() {
+  const queryClient = new QueryClient();
+
   return (
-    <CurrencyProvider>
-      <RouterProvider router={router} />
-    </CurrencyProvider>
+    <QueryClientProvider client={queryClient}>
+      <CurrencyProvider>
+        <RouterProvider router={router} />
+      </CurrencyProvider>
+    </QueryClientProvider>
   );
 }
 
