@@ -1,8 +1,10 @@
+import { totalCartAmountAtom } from '@/atoms/cart';
 import { CurrencyContext } from '@/context/currencyContext';
 import Badge from '@/ui-lib/components/badge';
 import CurrencyToggle, { type CurrencyType } from '@/ui-lib/components/currency-toggle';
 import { ArrowLeftIcon, ShoppingCartIcon } from '@/ui-lib/components/icons';
 import Logo from '@/ui-lib/components/logo';
+import { useAtomValue } from 'jotai';
 import { useContext } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { Flex, styled } from 'styled-system/jsx';
@@ -48,9 +50,10 @@ function BackButton() {
 
 function ShoppingCartButton() {
   const navigate = useNavigate();
+  const totalAmount = useAtomValue(totalCartAmountAtom);
 
   return (
-    <Badge content={9} size="sm" cursor="pointer" onClick={() => navigate('/shopping-cart')}>
+    <Badge content={totalAmount} size="sm" cursor="pointer" onClick={() => navigate('/shopping-cart')}>
       <ShoppingCartIcon size={22} />
     </Badge>
   );

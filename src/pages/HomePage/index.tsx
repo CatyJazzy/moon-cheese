@@ -3,7 +3,7 @@ import BannerSection from './components/BannerSection';
 import CurrentLevelSection from './components/CurrentLevelSection';
 import ProductListSection from './components/ProductListSection';
 import RecentPurchaseSection from './components/RecentPurchaseSection';
-import { Suspense, useContext } from 'react';
+import { useContext } from 'react';
 import { CurrencyContext } from '@/context/currencyContext';
 import { useQuery } from '@tanstack/react-query';
 
@@ -21,11 +21,9 @@ function HomePage() {
   return (
     <>
       <BannerSection />
-      <Suspense fallback={'TODO: 로딩처리'}>
-        <CurrentLevelSection />
-      </Suspense>
+      <CurrentLevelSection />
       <RecentPurchaseSection currency={currency} exchangeRate={exchangeRate} />
-      <ProductListSection />
+      <ProductListSection currency={currency} exchangeRate={exchangeRate} />
     </>
   );
 }
