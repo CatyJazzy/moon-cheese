@@ -16,10 +16,25 @@ type ProductInfoSectionProps = {
 };
 
 function ProductInfoSection({ id, name, category, rating, price, quantity }: ProductInfoSectionProps) {
-  const [cartItems, _] = useAtom(cartItemsAtom);
+  const [cartItems, setCartItems] = useAtom(cartItemsAtom);
   const [amount, setAmount] = useState<number>(0);
 
   const alreadyInCart = cartItems[id];
+
+  const updateItem = () => {
+    setCartItems(prev => ({
+      ...prev,
+      [id]: amount,
+    }));
+  };
+
+  const deleteItem = () => {
+    setCartItems(prev => {
+      const newItems = { ...prev };
+      delete newItems[id];
+      return newItems;
+    });
+  };
 
   return (
     <styled.section css={{ bg: 'background.01_white', p: 5 }}>
@@ -38,7 +53,7 @@ function ProductInfoSection({ id, name, category, rating, price, quantity }: Pro
       <AmountSelector isActive={!alreadyInCart} stock={quantity} amount={amount} onAmountChange={setAmount} />
       <Spacing size={5} />
       {/* 장바구니 버튼 */}
-      <Button fullWidth color="primary" size="lg">
+      <Button fullWidth color="primary" size="lg" onClick={alreadyInCart ? deleteItem : updateItem}>
         {alreadyInCart ? '장바구니에서 제거' : '장바구니 담기'}
       </Button>
     </styled.section>
