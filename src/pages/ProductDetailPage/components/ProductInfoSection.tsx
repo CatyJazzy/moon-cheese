@@ -1,37 +1,37 @@
-import { cartItemsAtom } from '@/atoms/cart';
+import { cartItemsAtom, type CartItem } from '@/atoms/cart';
 import { Button, RatingGroup, Spacing, Text } from '@/ui-lib';
 import Tag, { type TagType } from '@/ui-lib/components/tag';
 import { useAtom } from 'jotai';
 import { useState } from 'react';
 import { Box, Stack, styled } from 'styled-system/jsx';
 import AmountSelector from './AmountSelector';
+import type { Product } from '@/apis/types';
 
 type ProductInfoSectionProps = {
-  id: number;
-  name: string;
-  category: TagType;
-  rating: number;
-  price: string;
-  quantity: number;
+  product: Product;
+  formattedPrice: string;
 };
 
-function ProductInfoSection({ id, name, category, rating, price, quantity }: ProductInfoSectionProps) {
+function ProductInfoSection({ product, formattedPrice }: ProductInfoSectionProps) {
   const [cartItems, setCartItems] = useAtom(cartItemsAtom);
   const [amount, setAmount] = useState<number>(0);
 
-  const alreadyInCart = cartItems[id];
+  const alreadyInCart = cartItems[product.id];
 
   const updateItem = () => {
     setCartItems(prev => ({
       ...prev,
-      [id]: amount,
+      [product.id]: {
+        product,
+        quantity: amount,
+      },
     }));
   };
 
   const deleteItem = () => {
     setCartItems(prev => {
       const newItems = { ...prev };
-      delete newItems[id];
+      delete newItems[product.id];
       return newItems;
     });
   };
@@ -41,16 +41,16 @@ function ProductInfoSection({ id, name, category, rating, price, quantity }: Pro
       {/* 상품 정보 */}
       <Box>
         <Stack gap={2}>
-          <Tag type={category} />
-          <Text variant="B1_Bold">{name}</Text>
-          <RatingGroup value={rating} readOnly label={`${rating.toFixed(1)}`} />
+          <Tag type={product.category.toLowerCase() as TagType} />
+          <Text variant="B1_Bold">{product.name}</Text>
+          <RatingGroup value={product.rating} readOnly label={`${product.rating.toFixed(1)}`} />
         </Stack>
         <Spacing size={4} />
-        <Text variant="H1_Bold">{price}</Text>
+        <Text variant="H1_Bold">{formattedPrice}</Text>
       </Box>
       <Spacing size={5} />
       {/* 재고 및 수량 조절 */}
-      <AmountSelector isActive={!alreadyInCart} stock={quantity} amount={amount} onAmountChange={setAmount} />
+      <AmountSelector isActive={!alreadyInCart} stock={product.stock} amount={amount} onAmountChange={setAmount} />
       <Spacing size={5} />
       {/* 장바구니 버튼 */}
       <Button fullWidth color="primary" size="lg" onClick={alreadyInCart ? deleteItem : updateItem}>

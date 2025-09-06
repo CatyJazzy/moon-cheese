@@ -48,3 +48,13 @@ export interface GradePoint {
 export interface GradePointList {
   gradePointList: GradePoint[];
 }
+
+export interface GradeShipping {
+  type: UserGrade;
+  shippingFee: number;
+  freeShippingThreshold: number;
+}
+
+export interface GradeShippingList {
+  gradeShippingList: GradeShipping[];
+}

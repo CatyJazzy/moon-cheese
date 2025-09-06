@@ -8,7 +8,7 @@ export const calculatePrice = (price: number, currency: string, exchangeRate: nu
 
 export const formatPrice = (price: number, currency: string): string => {
   if (currency === 'USD') {
-    return '$' + price;
+    return '$' + price.toFixed(2);
   }
 
   const roundedPrice = Math.round(price);

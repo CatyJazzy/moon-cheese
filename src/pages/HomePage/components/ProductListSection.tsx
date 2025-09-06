@@ -41,19 +41,35 @@ interface Props {
 
 function Product({ product, onClick, formatPrice }: Props) {
   const [cartItems, setCartItems] = useAtom(cartItemsAtom);
-  const currentAmount = cartItems[product.id] || 0;
+  const currentAmount = cartItems[product.id]?.quantity || 0;
 
   const handleMinus = () => {
-    setCartItems(prev => ({
-      ...prev,
-      [product.id]: Math.max(0, currentAmount - 1),
-    }));
+    const newQuantity = Math.max(0, currentAmount - 1);
+    if (newQuantity === 0) {
+      setCartItems(prev => {
+        const newItems = { ...prev };
+        delete newItems[product.id];
+        return newItems;
+      });
+    } else {
+      setCartItems(prev => ({
+        ...prev,
+        [product.id]: {
+          product,
+          quantity: newQuantity,
+        },
+      }));
+    }
   };
 
   const handlePlus = () => {
+    const newQuantity = Math.min(product.stock, currentAmount + 1);
     setCartItems(prev => ({
       ...prev,
-      [product.id]: Math.min(product.stock, currentAmount + 1),
+      [product.id]: {
+        product,
+        quantity: newQuantity,
+      },
     }));
   };
 

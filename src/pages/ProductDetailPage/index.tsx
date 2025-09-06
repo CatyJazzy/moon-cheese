@@ -35,14 +35,7 @@ function ProductDetailPageContent() {
   return (
     <>
       <ThumbnailSection images={productInfo.images} />
-      <ProductInfoSection
-        id={productInfo.id}
-        name={productInfo.name}
-        category={productInfo.category.toLowerCase() as TagType}
-        rating={productInfo.rating}
-        price={formattedPrice}
-        quantity={productInfo.stock}
-      />
+      <ProductInfoSection product={productInfo} formattedPrice={formattedPrice} />
 
       <Spacing size={2.5} />
 

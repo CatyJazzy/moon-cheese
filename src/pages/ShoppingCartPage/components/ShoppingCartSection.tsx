@@ -1,101 +1,122 @@
-import { Button, Counter, Spacing, Text } from "@/ui-lib";
-import { Divider, Flex, Stack, styled } from "styled-system/jsx";
-import ShoppingCartItem from "./ShoppingCartItem";
+import { Button, Counter, Spacing, Text } from '@/ui-lib';
+import { Divider, Flex, Stack, styled } from 'styled-system/jsx';
+import ShoppingCartItem from './ShoppingCartItem';
+import { useAtom } from 'jotai';
+import { cartItemsAtom, type CartItem } from '@/atoms/cart';
+import { useContext } from 'react';
+import { CurrencyContext } from '@/context/currencyContext';
+import { formatPriceWithExchange } from '@/utils/price';
+import { useQuery } from '@tanstack/react-query';
+import { getExchangeRate } from '@/apis/exchange';
+
+function CartItem({
+  cartItem,
+  setCartItems,
+}: {
+  cartItem: CartItem;
+  setCartItems: (update: (prev: Record<number, CartItem>) => Record<number, CartItem>) => void;
+}) {
+  const { currency } = useContext(CurrencyContext);
+  const { data: exchangeData } = useQuery({
+    queryKey: ['exchangeRate'],
+    queryFn: getExchangeRate,
+  });
+
+  const exchangeRate = exchangeData ? exchangeData.exchangeRate.KRW / exchangeData.exchangeRate.USD : 1;
+  const formattedPrice = formatPriceWithExchange(cartItem.product.price, currency, exchangeRate);
+
+  const handleMinus = () => {
+    const newQuantity = Math.max(0, cartItem.quantity - 1);
+    if (newQuantity === 0) {
+      setCartItems(prev => {
+        const newItems = { ...prev };
+        delete newItems[cartItem.product.id];
+        return newItems;
+      });
+    } else {
+      setCartItems(prev => ({
+        ...prev,
+        [cartItem.product.id]: {
+          product: cartItem.product,
+          quantity: newQuantity,
+        },
+      }));
+    }
+  };
+
+  const handlePlus = () => {
+    const newQuantity = Math.min(cartItem.product.stock, cartItem.quantity + 1);
+    setCartItems(prev => ({
+      ...prev,
+      [cartItem.product.id]: {
+        product: cartItem.product,
+        quantity: newQuantity,
+      },
+    }));
+  };
+
+  const handleDelete = () => {
+    setCartItems(prev => {
+      const newItems = { ...prev };
+      delete newItems[cartItem.product.id];
+      return newItems;
+    });
+  };
+
+  return (
+    <ShoppingCartItem.Root>
+      <ShoppingCartItem.Image src={cartItem.product.images[0]} alt={cartItem.product.name} />
+      <ShoppingCartItem.Content>
+        <ShoppingCartItem.Info
+          type={cartItem.product.category.toLowerCase() as any}
+          title={cartItem.product.name}
+          description={cartItem.product.description}
+          onDelete={handleDelete}
+        />
+        <ShoppingCartItem.Footer>
+          <ShoppingCartItem.Price>{formattedPrice}</ShoppingCartItem.Price>
+          <Counter.Root>
+            <Counter.Minus onClick={handleMinus} />
+            <Counter.Display value={cartItem.quantity} />
+            <Counter.Plus onClick={handlePlus} disabled={cartItem.quantity >= cartItem.product.stock} />
+          </Counter.Root>
+        </ShoppingCartItem.Footer>
+      </ShoppingCartItem.Content>
+    </ShoppingCartItem.Root>
+  );
+}
 
 function ShoppingCartSection() {
-    return (
-        <styled.section css={{ p: 5, bgColor: "background.01_white" }}>
-            <Flex justify="space-between">
-                <Text variant="H2_Bold">장바구니</Text>
-                <Button color={"neutral"} size="sm">
-                    전체삭제
-                </Button>
-            </Flex>
-            <Spacing size={4} />
-            <Stack
-                gap={5}
-                css={{
-                    p: 5,
-                    border: "1px solid",
-                    borderColor: "border.01_gray",
-                    rounded: "2xl",
-                }}
-            >
-                <ShoppingCartItem.Root>
-                    <ShoppingCartItem.Image
-                        src="/moon-cheese-images/cheese-1-1.jpg"
-                        alt="월레스의 오리지널 웬슬리데일"
-                    />
-                    <ShoppingCartItem.Content>
-                        <ShoppingCartItem.Info
-                            type="cheese"
-                            title="월레스의 오리지널 웬슬리데일"
-                            description="월레스의 오리지널 웬슬리데일"
-                            onDelete={() => {}}
-                        />
-                        <ShoppingCartItem.Footer>
-                            <ShoppingCartItem.Price>$12.99</ShoppingCartItem.Price>
-                            <Counter.Root>
-                                <Counter.Minus onClick={() => {}} disabled={true} />
-                                <Counter.Display value={1} />
-                                <Counter.Plus onClick={() => {}} />
-                            </Counter.Root>
-                        </ShoppingCartItem.Footer>
-                    </ShoppingCartItem.Content>
-                </ShoppingCartItem.Root>
+  const [cartItems, setCartItems] = useAtom(cartItemsAtom);
 
-                <Divider color="border.01_gray" />
+  const handleClearAll = () => {
+    setCartItems({});
+  };
 
-                <ShoppingCartItem.Root>
-                    <ShoppingCartItem.Image
-                        src="/moon-cheese-images/cheese-2-1.jpg"
-                        alt="월레스의 오리지널 웬슬리데일"
-                    />
-                    <ShoppingCartItem.Content>
-                        <ShoppingCartItem.Info
-                            type="cracker"
-                            title="월레스의 오리지널 웬슬리데일"
-                            description="월레스의 오리지널 웬슬리데일"
-                            onDelete={() => {}}
-                        />
-                        <ShoppingCartItem.Footer>
-                            <ShoppingCartItem.Price>$12.99</ShoppingCartItem.Price>
-                            <Counter.Root>
-                                <Counter.Minus onClick={() => {}} disabled={true} />
-                                <Counter.Display value={1} />
-                                <Counter.Plus onClick={() => {}} />
-                            </Counter.Root>
-                        </ShoppingCartItem.Footer>
-                    </ShoppingCartItem.Content>
-                </ShoppingCartItem.Root>
-
-                <Divider color="border.01_gray" />
-
-                <ShoppingCartItem.Root>
-                    <ShoppingCartItem.Image
-                        src="/moon-cheese-images/cheese-3-1.jpg"
-                        alt="월레스의 오리지널 웬슬리데일"
-                    />
-                    <ShoppingCartItem.Content>
-                        <ShoppingCartItem.Info
-                            type="tea"
-                            title="월레스의 오리지널 웬슬리데일"
-                            description="월레스의 오리지널 웬슬리데일"
-                            onDelete={() => {}}
-                        />
-                        <ShoppingCartItem.Footer>
-                            <ShoppingCartItem.Price>$12.99</ShoppingCartItem.Price>
-                            <Counter.Root>
-                                <Counter.Minus onClick={() => {}} disabled={true} />
-                                <Counter.Display value={1} />
-                                <Counter.Plus onClick={() => {}} />
-                            </Counter.Root>
-                        </ShoppingCartItem.Footer>
-                    </ShoppingCartItem.Content>
-                </ShoppingCartItem.Root>
-            </Stack>
-        </styled.section>
-    );
+  return (
+    <styled.section css={{ p: 5, bgColor: 'background.01_white' }}>
+      <Flex justify="space-between">
+        <Text variant="H2_Bold">장바구니</Text>
+        <Button color={'neutral'} size="sm" onClick={handleClearAll}>
+          전체삭제
+        </Button>
+      </Flex>
+      <Spacing size={4} />
+      <Stack
+        gap={5}
+        css={{
+          p: 5,
+          border: '1px solid',
+          borderColor: 'border.01_gray',
+          rounded: '2xl',
+        }}
+      >
+        {Object.entries(cartItems).map(([productId, cartItem]) => (
+          <CartItem key={productId} cartItem={cartItem} setCartItems={setCartItems} />
+        ))}
+      </Stack>
+    </styled.section>
+  );
 }
 
 export default ShoppingCartSection;

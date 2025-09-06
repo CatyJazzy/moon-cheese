@@ -52,8 +52,10 @@ function ShoppingCartButton() {
   const navigate = useNavigate();
   const totalAmount = useAtomValue(totalCartAmountAtom);
 
+  console.log('Header 장바구니 개수:', totalAmount);
+
   return (
-    <Badge content={totalAmount} size="sm" cursor="pointer" onClick={() => navigate('/shopping-cart')}>
+    <Badge content={totalAmount} size="sm" cursor="pointer" onClick={() => navigate('/shopping-cart')} showZero={true}>
       <ShoppingCartIcon size={22} />
     </Badge>
   );
