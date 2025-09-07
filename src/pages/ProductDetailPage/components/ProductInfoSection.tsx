@@ -1,55 +1,63 @@
-import { Button, Counter, RatingGroup, Spacing, Text } from "@/ui-lib";
-import Tag, { type TagType } from "@/ui-lib/components/tag";
-import { Box, Divider, Flex, Stack, styled } from "styled-system/jsx";
+import { cartItemsAtom, type CartItem } from '@/atoms/cart';
+import { Button, RatingGroup, Spacing, Text } from '@/ui-lib';
+import Tag, { type TagType } from '@/ui-lib/components/tag';
+import { useAtom } from 'jotai';
+import { useState } from 'react';
+import { Box, Stack, styled } from 'styled-system/jsx';
+import AmountSelector from './AmountSelector';
+import type { Product } from '@/apis/types';
 
 type ProductInfoSectionProps = {
-    name: string;
-    category: TagType;
-    rating: number;
-    price: number;
-    quantity: number;
+  product: Product;
+  formattedPrice: string;
 };
 
-function ProductInfoSection({ name, category, rating, price, quantity }: ProductInfoSectionProps) {
-    return (
-        <styled.section css={{ bg: "background.01_white", p: 5 }}>
-            {/* 상품 정보 */}
-            <Box>
-                <Stack gap={2}>
-                    <Tag type={category} />
-                    <Text variant="B1_Bold">{name}</Text>
-                    <RatingGroup value={rating} readOnly label={`${rating.toFixed(1)}`} />
-                </Stack>
-                <Spacing size={4} />
-                <Text variant="H1_Bold">${price.toFixed(2)}</Text>
-            </Box>
+function ProductInfoSection({ product, formattedPrice }: ProductInfoSectionProps) {
+  const [cartItems, setCartItems] = useAtom(cartItemsAtom);
+  const [amount, setAmount] = useState<number>(0);
 
-            <Spacing size={5} />
+  const alreadyInCart = cartItems[product.id];
 
-            {/* 재고 및 수량 조절 */}
-            <Flex justify="space-between" alignItems="center">
-                <Flex alignItems="center" gap={2}>
-                    <Text variant="C1_Medium">재고</Text>
-                    <Divider orientation="vertical" color="border.01_gray" h={4} />
-                    <Text variant="C1_Medium" color="secondary.02_orange">
-                        {quantity}EA
-                    </Text>
-                </Flex>
-                <Counter.Root>
-                    <Counter.Minus onClick={() => {}} disabled={true} />
-                    <Counter.Display value={3} />
-                    <Counter.Plus onClick={() => {}} />
-                </Counter.Root>
-            </Flex>
+  const updateItem = () => {
+    setCartItems(prev => ({
+      ...prev,
+      [product.id]: {
+        product,
+        quantity: amount,
+      },
+    }));
+  };
 
-            <Spacing size={5} />
+  const deleteItem = () => {
+    setCartItems(prev => {
+      const newItems = { ...prev };
+      delete newItems[product.id];
+      return newItems;
+    });
+  };
 
-            {/* 장바구니 버튼 */}
-            <Button fullWidth color="primary" size="lg">
-                장바구니
-            </Button>
-        </styled.section>
-    );
+  return (
+    <styled.section css={{ bg: 'background.01_white', p: 5 }}>
+      {/* 상품 정보 */}
+      <Box>
+        <Stack gap={2}>
+          <Tag type={product.category.toLowerCase() as TagType} />
+          <Text variant="B1_Bold">{product.name}</Text>
+          <RatingGroup value={product.rating} readOnly label={`${product.rating.toFixed(1)}`} />
+        </Stack>
+        <Spacing size={4} />
+        <Text variant="H1_Bold">{formattedPrice}</Text>
+      </Box>
+      <Spacing size={5} />
+      {/* 재고 및 수량 조절 */}
+      <AmountSelector isActive={!alreadyInCart} stock={product.stock} amount={amount} onAmountChange={setAmount} />
+      <Spacing size={5} />
+      {/* 장바구니 버튼 */}
+      <Button fullWidth color="primary" size="lg" onClick={alreadyInCart ? deleteItem : updateItem}>
+        {alreadyInCart ? '장바구니에서 제거' : '장바구니 담기'}
+      </Button>
+    </styled.section>
+  );
 }
 
 export default ProductInfoSection;

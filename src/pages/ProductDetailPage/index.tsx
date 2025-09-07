@@ -1,41 +1,65 @@
-import { Spacing } from "@/ui-lib";
-import ProductDetailSection from "./components/ProductDetailSection";
-import ProductInfoSection from "./components/ProductInfoSection";
-import RecommendationSection from "./components/RecommendationSection";
-import ThumbnailSection from "./components/ThumbnailSection";
+import { Spacing, type TagType } from '@/ui-lib';
+import ProductDetailSection from './components/ProductDetailSection';
+import ProductInfoSection from './components/ProductInfoSection';
+import RecommendationSection from './components/RecommendationSection';
+import ThumbnailSection from './components/ThumbnailSection';
+import DataWrapper from '@/components/DataWrapper';
+import { useParams } from 'react-router';
+import { useSuspenseQuery, useQueryClient } from '@tanstack/react-query';
+import { productInfoQueryOptions, queryKeys as productQueryKeys } from '@/apis/product';
+import { exchangeRateQueryOptions } from '@/apis/exchange';
+import { useAtomValue } from 'jotai';
+import { currencyAtom } from '@/atoms/currency';
+import { formatPrice } from '@/utils/price';
+
+function ProductDetailPageContent() {
+  const { id } = useParams();
+  const currency = useAtomValue(currencyAtom);
+  const queryClient = useQueryClient();
+
+  const { data: productInfo } = useSuspenseQuery(productInfoQueryOptions(Number(id)));
+
+  const { data: exchangeData } = useSuspenseQuery(exchangeRateQueryOptions());
+
+  const exchangeRate = exchangeData.exchangeRate[currency];
+  const formattedPrice = formatPrice(productInfo.price * exchangeRate, currency);
+
+  return (
+    <>
+      <ThumbnailSection images={productInfo.images} />
+      <ProductInfoSection product={productInfo} formattedPrice={formattedPrice} />
+
+      <Spacing size={2.5} />
+
+      <ProductDetailSection description={productInfo.description} />
+
+      <Spacing size={2.5} />
+
+      <DataWrapper
+        loadingGuide="추천상품을 불러오는 중..."
+        onRetry={() => {
+          queryClient.invalidateQueries({ queryKey: productQueryKeys.recommendedProductIds(Number(id)) });
+        }}
+      >
+        <RecommendationSection productId={Number(id)} currency={currency} />
+      </DataWrapper>
+    </>
+  );
+}
 
 function ProductDetailPage() {
-	return (
-		<>
-			<ThumbnailSection
-				images={[
-					"/moon-cheese-images/cracker-1-1.jpg",
-					"/moon-cheese-images/cracker-1-2.jpg",
-					"/moon-cheese-images/cracker-1-3.jpg",
-					"/moon-cheese-images/cracker-1-4.jpg",
-				]}
-			/>
-			<ProductInfoSection
-				name={"치즈홀 크래커"}
-				category={"cracker"}
-				rating={4.0}
-				price={10.85}
-				quantity={2}
-			/>
+  const { id } = useParams();
+  const queryClient = useQueryClient();
 
-			<Spacing size={2.5} />
+  const handleRetry = () => {
+    queryClient.invalidateQueries({ queryKey: productQueryKeys.productInfo(Number(id)) });
+  };
 
-			<ProductDetailSection
-				description={
-					'"달 표면에서 가 수확한 특별한 구멍낸 크래커." 달의 분화구를 연상시키는 다지한과 고소한 풍미가 특징인 크래커. 치즈와의 궁합을 고려한 절묘한 비율로, 어느 데어링 메뉴도 잘 어울립니다.'
-				}
-			/>
-
-			<Spacing size={2.5} />
-
-			<RecommendationSection />
-		</>
-	);
+  return (
+    <DataWrapper loadingGuide="상품 정보를 불러오는 중..." onRetry={handleRetry}>
+      <ProductDetailPageContent />
+    </DataWrapper>
+  );
 }
 
 export default ProductDetailPage;
