@@ -2,10 +2,10 @@ import { Button, Counter, Spacing, Text } from '@/ui-lib';
 import { Divider, Flex, Stack, styled } from 'styled-system/jsx';
 import ShoppingCartItem from './ShoppingCartItem';
 import { type CartItem } from '@/atoms/cart';
-import { useContext } from 'react';
-import { CurrencyContext } from '@/context/currencyContext';
-import { formatPriceWithExchange } from '@/utils/price';
-import { useQuery } from '@tanstack/react-query';
+import { useAtomValue } from 'jotai';
+import { currencyAtom } from '@/atoms/currency';
+import { formatPrice } from '@/utils/price';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { getExchangeRate } from '@/apis/exchange';
 
 function CartItem({
@@ -15,14 +15,16 @@ function CartItem({
   cartItem: CartItem;
   setCartItems: (update: (prev: Record<number, CartItem>) => Record<number, CartItem>) => void;
 }) {
-  const { currency } = useContext(CurrencyContext);
-  const { data: exchangeData } = useQuery({
+  const currency = useAtomValue(currencyAtom);
+
+  const { data: exchangeData } = useSuspenseQuery({
     queryKey: ['exchangeRate'],
     queryFn: getExchangeRate,
+    staleTime: 30 * 60 * 1000,
   });
 
-  const exchangeRate = exchangeData ? exchangeData.exchangeRate.KRW / exchangeData.exchangeRate.USD : 1;
-  const formattedPrice = formatPriceWithExchange(cartItem.product.price, currency, exchangeRate);
+  const exchangeRate = exchangeData.exchangeRate[currency];
+  const formattedPrice = formatPrice(cartItem.product.price * exchangeRate, currency);
 
   const handleMinus = () => {
     const newQuantity = Math.max(0, cartItem.quantity - 1);

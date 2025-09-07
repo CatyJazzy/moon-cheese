@@ -2,7 +2,10 @@ import App from '@/App.tsx';
 import { enableMocking } from '@/server/brower.ts';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import './index.css';
+
+const queryClient = new QueryClient();
 
 enableMocking({
   serviceWorker: {
@@ -12,7 +15,9 @@ enableMocking({
 }).then(() => {
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
-      <App />
+      <QueryClientProvider client={queryClient}>
+        <App />
+      </QueryClientProvider>
     </StrictMode>
   );
 });

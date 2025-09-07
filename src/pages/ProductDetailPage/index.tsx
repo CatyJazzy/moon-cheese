@@ -5,16 +5,16 @@ import RecommendationSection from './components/RecommendationSection';
 import ThumbnailSection from './components/ThumbnailSection';
 import DataWrapper from '@/components/DataWrapper';
 import { useParams } from 'react-router';
-import { useSuspenseQuery, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useSuspenseQuery, useQueryClient } from '@tanstack/react-query';
 import { getProductInfo } from '@/apis/product';
 import { getExchangeRate } from '@/apis/exchange';
-import { useContext } from 'react';
-import { CurrencyContext } from '@/context/currencyContext';
-import { formatPriceWithExchange } from '@/utils/price';
+import { useAtomValue } from 'jotai';
+import { currencyAtom } from '@/atoms/currency';
+import { formatPrice } from '@/utils/price';
 
 function ProductDetailPageContent() {
   const { id } = useParams();
-  const { currency } = useContext(CurrencyContext);
+  const currency = useAtomValue(currencyAtom);
   const queryClient = useQueryClient();
 
   const { data: productInfo } = useSuspenseQuery({
@@ -22,15 +22,14 @@ function ProductDetailPageContent() {
     queryFn: () => getProductInfo(Number(id)),
   });
 
-  const { data: exchangeData } = useQuery({
+  const { data: exchangeData } = useSuspenseQuery({
     queryKey: ['exchangeRate'],
     queryFn: getExchangeRate,
+    staleTime: 30 * 60 * 1000,
   });
 
-  // TODO: 환율은 더 상위에서 한 번만 받아와서 관리하도록 수정하기
-  // TODO: 환율 fetching 실패했을 때는 가격도 로딩 처리하고 싶음 (지금은 임시로 1)
-  const exchangeRate = exchangeData ? exchangeData.exchangeRate.KRW / exchangeData.exchangeRate.USD : 1;
-  const formattedPrice = formatPriceWithExchange(productInfo.price, currency, exchangeRate);
+  const exchangeRate = exchangeData.exchangeRate[currency];
+  const formattedPrice = formatPrice(productInfo.price * exchangeRate, currency);
 
   return (
     <>
@@ -49,7 +48,7 @@ function ProductDetailPageContent() {
           queryClient.invalidateQueries({ queryKey: ['recommendedProductIds', id] });
         }}
       >
-        <RecommendationSection productId={Number(id)} />
+        <RecommendationSection productId={Number(id)} currency={currency} />
       </DataWrapper>
     </>
   );
@@ -61,7 +60,6 @@ function ProductDetailPage() {
 
   const handleRetry = () => {
     queryClient.invalidateQueries({ queryKey: ['productInfo', id] });
-    queryClient.invalidateQueries({ queryKey: ['exchangeRate'] });
   };
 
   return (

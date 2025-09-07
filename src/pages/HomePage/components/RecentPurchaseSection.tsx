@@ -2,8 +2,10 @@ import { Flex, styled } from 'styled-system/jsx';
 import { Spacing, Text } from '@/ui-lib';
 import { getRecentProducts } from '@/apis/product';
 import { type RecentProduct } from '@/apis/types';
-import { formatPriceWithExchange } from '@/utils/price';
+import { formatPrice } from '@/utils/price';
 import { useSuspenseQuery, useQueryClient } from '@tanstack/react-query';
+import { getExchangeRate } from '@/apis/exchange';
+import { type CurrencyType } from '@/atoms/currency';
 import DataWrapper from '@/components/DataWrapper';
 
 interface Props {
@@ -37,7 +39,7 @@ const RecentProduct = ({ product, formatPrice }: Props) => {
   );
 };
 
-function RecentPurchaseSection({ currency, exchangeRate }: { currency: string; exchangeRate: number }) {
+function RecentPurchaseSection({ currency }: { currency: CurrencyType }) {
   const queryClient = useQueryClient();
 
   const handleRetry = () => {
@@ -49,15 +51,23 @@ function RecentPurchaseSection({ currency, exchangeRate }: { currency: string; e
       <Text variant="H1_Bold">최근 구매한 상품</Text>
       <Spacing size={4} />
       <DataWrapper loadingGuide="최근 구매 내역을 불러오는 중이에요" onRetry={handleRetry}>
-        <RecentPurchaseContents currency={currency} exchangeRate={exchangeRate} />
+        <RecentPurchaseContents currency={currency} />
       </DataWrapper>
     </styled.section>
   );
 }
 
-function RecentPurchaseContents({ currency, exchangeRate }: { currency: string; exchangeRate: number }) {
-  const priceToShow = (price: number, rate: number) => {
-    return formatPriceWithExchange(price, currency, rate);
+function RecentPurchaseContents({ currency }: { currency: CurrencyType }) {
+  const { data: exchangeData } = useSuspenseQuery({
+    queryKey: ['exchangeRate'],
+    queryFn: getExchangeRate,
+    staleTime: 30 * 60 * 1000,
+  });
+
+  const exchangeRate = exchangeData.exchangeRate[currency];
+
+  const priceToShow = (price: number) => {
+    return formatPrice(price * exchangeRate, currency);
   };
 
   const { data } = useSuspenseQuery({
@@ -83,9 +93,7 @@ function RecentPurchaseContents({ currency, exchangeRate }: { currency: string; 
           최근 구매한 상품이 없습니다.
         </Text>
       ) : (
-        recentProducts.map(product => (
-          <RecentProduct key={product.id} product={product} formatPrice={price => priceToShow(price, exchangeRate)} />
-        ))
+        recentProducts.map(product => <RecentProduct key={product.id} product={product} formatPrice={priceToShow} />)
       )}
     </Flex>
   );

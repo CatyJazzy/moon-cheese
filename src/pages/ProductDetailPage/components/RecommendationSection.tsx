@@ -2,26 +2,26 @@ import { Spacing, Text } from '@/ui-lib';
 import { useNavigate } from 'react-router';
 import { HStack, styled } from 'styled-system/jsx';
 import RecommendationProductItem from './RecommendationProductItem';
-import { useSuspenseQuery, useQueries, useQuery } from '@tanstack/react-query';
+import { useSuspenseQuery, useQueries } from '@tanstack/react-query';
 import { getRecommendations, getProductInfo } from '@/apis/product';
+import { formatPrice } from '@/utils/price';
 import { getExchangeRate } from '@/apis/exchange';
-import { useContext } from 'react';
-import { CurrencyContext } from '@/context/currencyContext';
-import { formatPriceWithExchange } from '@/utils/price';
+import { type CurrencyType } from '@/atoms/currency';
 import Loading from '@/components/Loading';
 
-function RecommendationSection({ productId }: { productId: number }) {
-  const { currency } = useContext(CurrencyContext);
-
+function RecommendationSection({ productId, currency }: { productId: number; currency: CurrencyType }) {
   const { data: productIds } = useSuspenseQuery({
     queryKey: ['recommendedProductIds', productId],
     queryFn: () => getRecommendations(productId),
   });
 
-  const { data: exchangeData } = useQuery({
+  const { data: exchangeData } = useSuspenseQuery({
     queryKey: ['exchangeRate'],
     queryFn: getExchangeRate,
+    staleTime: 30 * 60 * 1000,
   });
+
+  const exchangeRate = exchangeData.exchangeRate[currency];
 
   const productQueries = useQueries({
     queries: productIds.recommendProductIds.map((id: number) => ({
@@ -32,9 +32,6 @@ function RecommendationSection({ productId }: { productId: number }) {
 
   const isLoading = productQueries.some(query => query.isLoading);
   const products = productQueries.map(query => query.data).filter(data => !!data);
-
-  // 환율 정보 (실패 시 기본값 1)
-  const exchangeRate = exchangeData ? exchangeData.exchangeRate.KRW / exchangeData.exchangeRate.USD : 1;
 
   const navigate = useNavigate();
 
@@ -56,7 +53,7 @@ function RecommendationSection({ productId }: { productId: number }) {
               <RecommendationProductItem.Image src={product.images[0]} alt={product.name} />
               <RecommendationProductItem.Info name={product.name} rating={product.rating} />
               <RecommendationProductItem.Price>
-                {formatPriceWithExchange(product.price, currency, exchangeRate)}
+                {formatPrice(product.price * exchangeRate, currency)}
               </RecommendationProductItem.Price>
             </RecommendationProductItem.Root>
           ))}

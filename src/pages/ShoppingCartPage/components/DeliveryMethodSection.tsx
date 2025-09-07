@@ -1,14 +1,13 @@
 import { Flex, Stack, styled } from 'styled-system/jsx';
 import { Spacing, Text } from '@/ui-lib';
 import { DeliveryIcon, RocketIcon } from '@/ui-lib/components/icons';
-import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { getUserInfo, getGradeShippingList } from '@/apis/userInfo';
 import { useAtomValue } from 'jotai';
 import { cartItemsAtom } from '@/atoms/cart';
-import { useContext } from 'react';
-import { CurrencyContext } from '@/context/currencyContext';
+import { currencyAtom } from '@/atoms/currency';
+import { formatPrice } from '@/utils/price';
 import { getExchangeRate } from '@/apis/exchange';
-import { formatPriceWithExchange } from '@/utils/price';
 
 function DeliveryMethodSection({
   selectedDeliveryMethod,
@@ -29,13 +28,15 @@ function DeliveryMethodSection({
     queryFn: getGradeShippingList,
   });
   const cartItems = useAtomValue(cartItemsAtom);
-  const { currency } = useContext(CurrencyContext);
-  const { data: exchangeData } = useQuery({
+  const currency = useAtomValue(currencyAtom);
+
+  const { data: exchangeData } = useSuspenseQuery({
     queryKey: ['exchangeRate'],
     queryFn: getExchangeRate,
+    staleTime: 30 * 60 * 1000,
   });
 
-  const exchangeRate = exchangeData ? exchangeData.exchangeRate.KRW / exchangeData.exchangeRate.USD : 1;
+  const exchangeRate = exchangeData.exchangeRate[currency];
 
   const totalCartAmount = Object.values(cartItems).reduce((sum, item) => {
     const itemPrice = item.product.price * item.quantity;
@@ -113,7 +114,7 @@ function DeliveryItem({
   currency: string;
   exchangeRate: number;
 }) {
-  const formattedPrice = formatPriceWithExchange(price, currency, exchangeRate);
+  const formattedPrice = formatPrice(price * exchangeRate, currency);
 
   return (
     <Flex

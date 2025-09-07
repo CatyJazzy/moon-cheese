@@ -5,11 +5,13 @@ import { Box, Grid, styled } from 'styled-system/jsx';
 import ProductItem from '../components/ProductItem';
 import { useSuspenseQuery, useQueryClient } from '@tanstack/react-query';
 import { getProductList } from '@/apis/product';
+import { getExchangeRate } from '@/apis/exchange';
 import { groupBy } from 'es-toolkit';
 import type { Product, ProductCategory } from '@/apis/types';
-import { formatPriceWithExchange } from '@/utils/price';
+import { formatPrice } from '@/utils/price';
 import { useAtom } from 'jotai';
 import { cartItemsAtom } from '@/atoms/cart';
+import { type CurrencyType } from '@/atoms/currency';
 import DataWrapper from '@/components/DataWrapper';
 
 type ProductCategoryOptions = ProductCategory | 'ALL';
@@ -95,7 +97,7 @@ function Product({ product, onClick, formatPrice }: Props) {
   );
 }
 
-function ProductListSection({ currency, exchangeRate }: { currency: string; exchangeRate: number }) {
+function ProductListSection({ currency }: { currency: CurrencyType }) {
   const queryClient = useQueryClient();
 
   const handleRetry = () => {
@@ -108,18 +110,27 @@ function ProductListSection({ currency, exchangeRate }: { currency: string; exch
         <Text variant="H1_Bold">판매중인 상품</Text>
       </Box>
       <DataWrapper loadingGuide="상품을 불러오는 중이에요" onRetry={handleRetry}>
-        <ProductListContents currency={currency} exchangeRate={exchangeRate} />
+        <ProductListContents currency={currency} />
       </DataWrapper>
     </styled.section>
   );
 }
 
-function ProductListContents({ currency, exchangeRate }: { currency: string; exchangeRate: number }) {
+function ProductListContents({ currency }: { currency: CurrencyType }) {
   const [currentTab, setCurrentTab] = useState<ProductCategoryOptions>('ALL');
   const navigate = useNavigate();
 
-  const priceToShow = (price: number, rate: number) => {
-    return formatPriceWithExchange(price, currency, rate);
+  // 환율 정보를 개별적으로 요청 (Suspense 사용)
+  const { data: exchangeData } = useSuspenseQuery({
+    queryKey: ['exchangeRate'],
+    queryFn: getExchangeRate,
+    staleTime: 30 * 60 * 1000, // 30분
+  });
+
+  const exchangeRate = exchangeData.exchangeRate[currency];
+
+  const priceToShow = (price: number) => {
+    return formatPrice(price * exchangeRate, currency);
   };
 
   const handleClickProduct = (productId: number) => {
@@ -153,7 +164,7 @@ function ProductListContents({ currency, exchangeRate }: { currency: string; exc
             key={product.id}
             product={product}
             onClick={() => handleClickProduct(product.id)}
-            formatPrice={price => priceToShow(price, exchangeRate)}
+            formatPrice={priceToShow}
           />
         ))}
       </Grid>

@@ -1,20 +1,23 @@
 import { totalCartAmountAtom } from '@/atoms/cart';
-import { CurrencyContext } from '@/context/currencyContext';
+import { currencyAtom } from '@/atoms/currency';
 import Badge from '@/ui-lib/components/badge';
-import CurrencyToggle, { type CurrencyType } from '@/ui-lib/components/currency-toggle';
+import CurrencyToggle from '@/ui-lib/components/currency-toggle';
 import { ArrowLeftIcon, ShoppingCartIcon } from '@/ui-lib/components/icons';
 import Logo from '@/ui-lib/components/logo';
-import { useAtomValue } from 'jotai';
-import { useContext } from 'react';
+import { useAtom, useAtomValue } from 'jotai';
 import { useLocation, useNavigate } from 'react-router';
 import { Flex, styled } from 'styled-system/jsx';
 import { flex } from 'styled-system/patterns';
 
 export function Header() {
-  const { currency, setCurrency } = useContext(CurrencyContext);
+  const [currency, setCurrency] = useAtom(currencyAtom);
   const location = useLocation();
 
   const isRootRoute = location.pathname === '/';
+
+  const handleCurrencyChange = (newCurrency: 'USD' | 'KRW') => {
+    setCurrency(newCurrency);
+  };
 
   return (
     <styled.header
@@ -31,7 +34,7 @@ export function Header() {
     >
       {isRootRoute ? <Logo /> : <BackButton />}
       <Flex alignItems="center" gap={4}>
-        <CurrencyToggle value={currency} onValueChange={setCurrency} />
+        <CurrencyToggle value={currency} onValueChange={handleCurrencyChange} />
         <ShoppingCartButton />
       </Flex>
     </styled.header>

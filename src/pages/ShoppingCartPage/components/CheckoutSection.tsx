@@ -2,13 +2,14 @@ import { SECOND } from '@/constants/time';
 import { Button, Spacing, Text } from '@/ui-lib';
 import { toast } from '@/ui-lib/components/toast';
 import { delay } from '@/utils/async';
-import { useContext } from 'react';
 import { useNavigate } from 'react-router';
 import { Box, Divider, Flex, HStack, Stack, styled } from 'styled-system/jsx';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { CurrencyContext } from '@/context/currencyContext';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAtomValue } from 'jotai';
+import { currencyAtom } from '@/atoms/currency';
+import { formatPrice } from '@/utils/price';
+import { useSuspenseQuery } from '@tanstack/react-query';
 import { getExchangeRate } from '@/apis/exchange';
-import { formatPriceWithExchange } from '@/utils/price';
 import type { CartItem } from '@/atoms/cart';
 import { purchaseProducts, type PurchaseRequest } from '@/apis/product';
 
@@ -25,15 +26,15 @@ function CheckoutSection({
 }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { currency } = useContext(CurrencyContext);
+  const currency = useAtomValue(currencyAtom);
 
-  // TODO: 환율정보 관리해서 환산하는 로직 분리해야 함
-  const { data: exchangeData } = useQuery({
+  const { data: exchangeData } = useSuspenseQuery({
     queryKey: ['exchangeRate'],
     queryFn: getExchangeRate,
+    staleTime: 30 * 60 * 1000,
   });
 
-  const exchangeRate = exchangeData ? exchangeData.exchangeRate.KRW / exchangeData.exchangeRate.USD : 1;
+  const exchangeRate = exchangeData.exchangeRate[currency];
 
   // 총 주문개수 계산
   const totalQuantity = Object.values(cartItems).reduce((sum, item) => sum + item.quantity, 0);
@@ -97,13 +98,13 @@ function CheckoutSection({
           <Box gap={3}>
             <Flex justify="space-between">
               <Text variant="B2_Regular">주문금액({totalQuantity}개)</Text>
-              <Text variant="B2_Bold">{formatPriceWithExchange(totalOrderAmount, currency, exchangeRate)}</Text>
+              <Text variant="B2_Bold">{formatPrice(totalOrderAmount * exchangeRate, currency)}</Text>
             </Flex>
             <Spacing size={3} />
             <Flex justify="space-between">
               <Text variant="B2_Regular">배송비</Text>
               <Text variant="B2_Bold" color={shippingFee === 0 ? 'state.green' : undefined}>
-                {shippingFee === 0 ? '무료배송' : formatPriceWithExchange(shippingFee, currency, exchangeRate)}
+                {shippingFee === 0 ? '무료배송' : formatPrice(shippingFee * exchangeRate, currency)}
               </Text>
             </Flex>
           </Box>
@@ -112,7 +113,7 @@ function CheckoutSection({
 
           <HStack justify="space-between">
             <Text variant="H2_Bold">총 금액</Text>
-            <Text variant="H2_Bold">{formatPriceWithExchange(totalAmount, currency, exchangeRate)}</Text>
+            <Text variant="H2_Bold">{formatPrice(totalAmount * exchangeRate, currency)}</Text>
           </HStack>
         </Stack>
 
