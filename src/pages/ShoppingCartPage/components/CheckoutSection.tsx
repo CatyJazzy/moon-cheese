@@ -2,18 +2,29 @@ import { SECOND } from '@/constants/time';
 import { Button, Spacing, Text } from '@/ui-lib';
 import { toast } from '@/ui-lib/components/toast';
 import { delay } from '@/utils/async';
-import { useState, useContext } from 'react';
+import { useContext } from 'react';
 import { useNavigate } from 'react-router';
 import { Box, Divider, Flex, HStack, Stack, styled } from 'styled-system/jsx';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { CurrencyContext } from '@/context/currencyContext';
 import { getExchangeRate } from '@/apis/exchange';
 import { formatPriceWithExchange } from '@/utils/price';
 import type { CartItem } from '@/atoms/cart';
+import { purchaseProducts, type PurchaseRequest } from '@/apis/product';
 
-function CheckoutSection({ cartItems, shippingFee }: { cartItems: Record<number, CartItem>; shippingFee: number }) {
+function CheckoutSection({
+  cartItems,
+  shippingFee,
+  selectedDeliveryMethod,
+  setCartItems,
+}: {
+  cartItems: Record<number, CartItem>;
+  shippingFee: number;
+  selectedDeliveryMethod: string;
+  setCartItems: (update: (prev: Record<number, CartItem>) => Record<number, CartItem>) => void;
+}) {
   const navigate = useNavigate();
-  const [isPurchasing, setIsPurchasing] = useState(false);
+  const queryClient = useQueryClient();
   const { currency } = useContext(CurrencyContext);
 
   // TODO: 환율정보 관리해서 환산하는 로직 분리해야 함
@@ -34,13 +45,37 @@ function CheckoutSection({ cartItems, shippingFee }: { cartItems: Record<number,
 
   const totalAmount = totalOrderAmount + shippingFee;
 
-  const onClickPurchase = async () => {
-    setIsPurchasing(true);
-    await delay(SECOND * 1);
-    setIsPurchasing(false);
-    toast.success('결제가 완료되었습니다.');
-    await delay(SECOND * 2);
-    navigate('/');
+  const purchaseMutation = useMutation({
+    mutationFn: purchaseProducts,
+    onSuccess: async () => {
+      setCartItems(() => ({}));
+
+      // 사용자 정보 최신화 (포인트/등급)
+      await queryClient.invalidateQueries({ queryKey: ['userInfo'] });
+
+      toast.success('결제가 완료되었습니다.');
+      await delay(SECOND * 3);
+      navigate('/');
+    },
+    onError: error => {
+      console.error('결제 실패:', error);
+      toast.error('결제에 실패했습니다. 잠시 후 다시 시도해주세요.');
+    },
+  });
+
+  const onClickPurchase = () => {
+    const deliveryType = selectedDeliveryMethod === 'Express' ? 'EXPRESS' : 'PREMIUM';
+
+    const purchaseData: PurchaseRequest = {
+      deliveryType: deliveryType as 'EXPRESS' | 'PREMIUM',
+      totalPrice: totalAmount,
+      items: Object.values(cartItems).map(item => ({
+        productId: item.product.id,
+        quantity: item.quantity,
+      })),
+    };
+
+    purchaseMutation.mutate(purchaseData);
   };
 
   return (
@@ -81,8 +116,8 @@ function CheckoutSection({ cartItems, shippingFee }: { cartItems: Record<number,
           </HStack>
         </Stack>
 
-        <Button fullWidth size="lg" loading={isPurchasing} onClick={onClickPurchase}>
-          {isPurchasing ? '결제 중...' : '결제 진행'}
+        <Button fullWidth size="lg" loading={purchaseMutation.isPending} onClick={onClickPurchase}>
+          {purchaseMutation.isPending ? '결제 중...' : '결제 진행'}
         </Button>
 
         <Text variant="C2_Regular" color="neutral.03_gray">

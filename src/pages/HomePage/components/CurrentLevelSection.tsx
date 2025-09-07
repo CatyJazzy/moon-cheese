@@ -68,13 +68,13 @@ function CurrentLevelContents() {
           <Box textAlign="left">
             <Text variant="C1_Bold">현재 포인트</Text>
             <Text variant="C2_Regular" color="neutral.03_gray">
-              {userInfo?.point || 0}p
+              {Math.round(userInfo?.point || 0)}p
             </Text>
           </Box>
           <Box textAlign="right">
             <Text variant="C1_Bold">다음 등급까지</Text>
             <Text variant="C2_Regular" color="neutral.03_gray">
-              {remainingPoints}p
+              {Math.round(remainingPoints)}p
             </Text>
           </Box>
         </Flex>

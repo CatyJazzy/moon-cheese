@@ -1,8 +1,7 @@
 import { Button, Counter, Spacing, Text } from '@/ui-lib';
 import { Divider, Flex, Stack, styled } from 'styled-system/jsx';
 import ShoppingCartItem from './ShoppingCartItem';
-import { useAtom } from 'jotai';
-import { cartItemsAtom, type CartItem } from '@/atoms/cart';
+import { type CartItem } from '@/atoms/cart';
 import { useContext } from 'react';
 import { CurrencyContext } from '@/context/currencyContext';
 import { formatPriceWithExchange } from '@/utils/price';
@@ -86,11 +85,15 @@ function CartItem({
   );
 }
 
-function ShoppingCartSection() {
-  const [cartItems, setCartItems] = useAtom(cartItemsAtom);
-
+function ShoppingCartSection({
+  cartItems,
+  setCartItems,
+}: {
+  cartItems: Record<number, CartItem>;
+  setCartItems: (update: (prev: Record<number, CartItem>) => Record<number, CartItem>) => void;
+}) {
   const handleClearAll = () => {
-    setCartItems({});
+    setCartItems(() => ({}));
   };
 
   return (

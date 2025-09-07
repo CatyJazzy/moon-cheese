@@ -1,8 +1,7 @@
-import { useState } from 'react';
 import { Flex, Stack, styled } from 'styled-system/jsx';
 import { Spacing, Text } from '@/ui-lib';
 import { DeliveryIcon, RocketIcon } from '@/ui-lib/components/icons';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useSuspenseQuery } from '@tanstack/react-query';
 import { getUserInfo, getGradeShippingList } from '@/apis/userInfo';
 import { useAtomValue } from 'jotai';
 import { cartItemsAtom } from '@/atoms/cart';
@@ -20,13 +19,12 @@ function DeliveryMethodSection({
   onDeliveryMethodChange: (method: string) => void;
   onShippingFeeChange: (fee: number) => void;
 }) {
-  // 사용자 등급 정보 (기존에 home에서 불러왔던 거 재사용함)
-  const { data: userInfo } = useQuery({
+  const { data: userInfo } = useSuspenseQuery({
     queryKey: ['userInfo'],
     queryFn: getUserInfo,
   });
 
-  const { data: gradeShippingData } = useQuery({
+  const { data: gradeShippingData } = useSuspenseQuery({
     queryKey: ['gradeShipping'],
     queryFn: getGradeShippingList,
   });

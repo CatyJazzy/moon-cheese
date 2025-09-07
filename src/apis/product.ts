@@ -17,3 +17,16 @@ export const getProductInfo = (id: number): Promise<Product> => {
 export const getRecommendations = (id: number): Promise<{ recommendProductIds: number[] }> => {
   return http.get(`/api/product/recommend/${id}`);
 };
+
+export interface PurchaseRequest {
+  deliveryType: 'EXPRESS' | 'PREMIUM';
+  totalPrice: number;
+  items: {
+    productId: number;
+    quantity: number;
+  }[];
+}
+
+export const purchaseProducts = (data: PurchaseRequest): Promise<null> => {
+  return http.post('/api/product/purchase', data);
+};
