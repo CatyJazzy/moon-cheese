@@ -47,19 +47,19 @@ function DeliveryMethodSection({
   const userGrade = userInfo?.grade || 'EXPLORER';
   const gradeShippingPolicy = gradeShippingData?.gradeShippingList.find(policy => policy.type === userGrade);
 
-  const calculateShippingFee = (baseFee: number) => {
-    if (!gradeShippingPolicy) return baseFee;
+  const calculateShippingFee = () => {
+    if (!gradeShippingPolicy) return 0;
 
     const freeShippingThresholdUSD = gradeShippingPolicy.freeShippingThreshold;
 
     if (totalCartAmount >= freeShippingThresholdUSD) {
       return 0;
     }
-    return gradeShippingPolicy.shippingFee + baseFee;
+    return gradeShippingPolicy.shippingFee;
   };
 
   const expressFee = 0;
-  const premiumFee = calculateShippingFee(5);
+  const premiumFee = calculateShippingFee();
 
   const currentShippingFee = selectedDeliveryMethod === 'Express' ? expressFee : premiumFee;
   onShippingFeeChange(currentShippingFee);
