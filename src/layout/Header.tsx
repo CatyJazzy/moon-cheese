@@ -1,63 +1,60 @@
-import Badge from "@/ui-lib/components/badge";
-import CurrencyToggle, {
-	type CurrencyType,
-} from "@/ui-lib/components/currency-toggle";
-import { ArrowLeftIcon, ShoppingCartIcon } from "@/ui-lib/components/icons";
-import Logo from "@/ui-lib/components/logo";
-import { useState } from "react";
-import { useLocation, useNavigate } from "react-router";
-import { Flex, styled } from "styled-system/jsx";
-import { flex } from "styled-system/patterns";
+import { totalCartAmountAtom } from '@/atoms/cart';
+import { CurrencyContext } from '@/context/currencyContext';
+import Badge from '@/ui-lib/components/badge';
+import CurrencyToggle, { type CurrencyType } from '@/ui-lib/components/currency-toggle';
+import { ArrowLeftIcon, ShoppingCartIcon } from '@/ui-lib/components/icons';
+import Logo from '@/ui-lib/components/logo';
+import { useAtomValue } from 'jotai';
+import { useContext } from 'react';
+import { useLocation, useNavigate } from 'react-router';
+import { Flex, styled } from 'styled-system/jsx';
+import { flex } from 'styled-system/patterns';
 
 export function Header() {
-	const [currency, setCurrency] = useState<CurrencyType>("USD");
-	const location = useLocation();
+  const { currency, setCurrency } = useContext(CurrencyContext);
+  const location = useLocation();
 
-	const isRootRoute = location.pathname === "/";
+  const isRootRoute = location.pathname === '/';
 
-	return (
-		<styled.header
-			className={flex({
-				pos: "sticky",
-				top: 0,
-				alignItems: "center",
-				justifyContent: "space-between",
-				h: 14,
-				px: 5,
-				zIndex: "docked",
-				bg: "background.01_white",
-			})}
-		>
-			{isRootRoute ? <Logo /> : <BackButton />}
-			<Flex alignItems="center" gap={4}>
-				<CurrencyToggle value={currency} onValueChange={setCurrency} />
-				<ShoppingCartButton />
-			</Flex>
-		</styled.header>
-	);
+  return (
+    <styled.header
+      className={flex({
+        pos: 'sticky',
+        top: 0,
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        h: 14,
+        px: 5,
+        zIndex: 'docked',
+        bg: 'background.01_white',
+      })}
+    >
+      {isRootRoute ? <Logo /> : <BackButton />}
+      <Flex alignItems="center" gap={4}>
+        <CurrencyToggle value={currency} onValueChange={setCurrency} />
+        <ShoppingCartButton />
+      </Flex>
+    </styled.header>
+  );
 }
 
 function BackButton() {
-	const navigate = useNavigate();
+  const navigate = useNavigate();
 
-	return (
-		<styled.button onClick={() => navigate(-1)} color="neutral.01_black">
-			<ArrowLeftIcon />
-		</styled.button>
-	);
+  return (
+    <styled.button onClick={() => navigate(-1)} color="neutral.01_black">
+      <ArrowLeftIcon />
+    </styled.button>
+  );
 }
 
 function ShoppingCartButton() {
-	const navigate = useNavigate();
+  const navigate = useNavigate();
+  const totalAmount = useAtomValue(totalCartAmountAtom);
 
-	return (
-		<Badge
-			content={9}
-			size="sm"
-			cursor="pointer"
-			onClick={() => navigate("/shopping-cart")}
-		>
-			<ShoppingCartIcon size={22} />
-		</Badge>
-	);
+  return (
+    <Badge content={totalAmount} size="sm" cursor="pointer" onClick={() => navigate('/shopping-cart')} showZero={true}>
+      <ShoppingCartIcon size={22} />
+    </Badge>
+  );
 }
