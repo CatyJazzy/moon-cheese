@@ -6,8 +6,8 @@ import ThumbnailSection from './components/ThumbnailSection';
 import DataWrapper from '@/components/DataWrapper';
 import { useParams } from 'react-router';
 import { useSuspenseQuery, useQueryClient } from '@tanstack/react-query';
-import { getProductInfo } from '@/apis/product';
-import { getExchangeRate } from '@/apis/exchange';
+import { productInfoQueryOptions, queryKeys as productQueryKeys } from '@/apis/product';
+import { exchangeRateQueryOptions } from '@/apis/exchange';
 import { useAtomValue } from 'jotai';
 import { currencyAtom } from '@/atoms/currency';
 import { formatPrice } from '@/utils/price';
@@ -17,16 +17,9 @@ function ProductDetailPageContent() {
   const currency = useAtomValue(currencyAtom);
   const queryClient = useQueryClient();
 
-  const { data: productInfo } = useSuspenseQuery({
-    queryKey: ['productInfo', id],
-    queryFn: () => getProductInfo(Number(id)),
-  });
+  const { data: productInfo } = useSuspenseQuery(productInfoQueryOptions(Number(id)));
 
-  const { data: exchangeData } = useSuspenseQuery({
-    queryKey: ['exchangeRate'],
-    queryFn: getExchangeRate,
-    staleTime: 30 * 60 * 1000,
-  });
+  const { data: exchangeData } = useSuspenseQuery(exchangeRateQueryOptions());
 
   const exchangeRate = exchangeData.exchangeRate[currency];
   const formattedPrice = formatPrice(productInfo.price * exchangeRate, currency);
@@ -45,7 +38,7 @@ function ProductDetailPageContent() {
       <DataWrapper
         loadingGuide="추천상품을 불러오는 중..."
         onRetry={() => {
-          queryClient.invalidateQueries({ queryKey: ['recommendedProductIds', id] });
+          queryClient.invalidateQueries({ queryKey: productQueryKeys.recommendedProductIds(Number(id)) });
         }}
       >
         <RecommendationSection productId={Number(id)} currency={currency} />
@@ -59,7 +52,7 @@ function ProductDetailPage() {
   const queryClient = useQueryClient();
 
   const handleRetry = () => {
-    queryClient.invalidateQueries({ queryKey: ['productInfo', id] });
+    queryClient.invalidateQueries({ queryKey: productQueryKeys.productInfo(Number(id)) });
   };
 
   return (

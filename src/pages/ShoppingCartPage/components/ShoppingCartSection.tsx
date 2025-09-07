@@ -6,7 +6,7 @@ import { useAtomValue } from 'jotai';
 import { currencyAtom } from '@/atoms/currency';
 import { formatPrice } from '@/utils/price';
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { getExchangeRate } from '@/apis/exchange';
+import { exchangeRateQueryOptions } from '@/apis/exchange';
 
 function CartItem({
   cartItem,
@@ -17,11 +17,7 @@ function CartItem({
 }) {
   const currency = useAtomValue(currencyAtom);
 
-  const { data: exchangeData } = useSuspenseQuery({
-    queryKey: ['exchangeRate'],
-    queryFn: getExchangeRate,
-    staleTime: 30 * 60 * 1000,
-  });
+  const { data: exchangeData } = useSuspenseQuery(exchangeRateQueryOptions());
 
   const exchangeRate = exchangeData.exchangeRate[currency];
   const formattedPrice = formatPrice(cartItem.product.price * exchangeRate, currency);

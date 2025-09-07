@@ -4,8 +4,8 @@ import { useNavigate } from 'react-router';
 import { Box, Grid, styled } from 'styled-system/jsx';
 import ProductItem from '../components/ProductItem';
 import { useSuspenseQuery, useQueryClient } from '@tanstack/react-query';
-import { getProductList } from '@/apis/product';
-import { getExchangeRate } from '@/apis/exchange';
+import { productListQueryOptions, queryKeys as productQueryKeys } from '@/apis/product';
+import { exchangeRateQueryOptions } from '@/apis/exchange';
 import { groupBy } from 'es-toolkit';
 import type { Product, ProductCategory } from '@/apis/types';
 import { formatPrice } from '@/utils/price';
@@ -101,7 +101,7 @@ function ProductListSection({ currency }: { currency: CurrencyType }) {
   const queryClient = useQueryClient();
 
   const handleRetry = () => {
-    queryClient.invalidateQueries({ queryKey: ['productList'] });
+    queryClient.invalidateQueries({ queryKey: productQueryKeys.productList() });
   };
 
   return (
@@ -120,12 +120,7 @@ function ProductListContents({ currency }: { currency: CurrencyType }) {
   const [currentTab, setCurrentTab] = useState<ProductCategoryOptions>('ALL');
   const navigate = useNavigate();
 
-  // 환율 정보를 개별적으로 요청 (Suspense 사용)
-  const { data: exchangeData } = useSuspenseQuery({
-    queryKey: ['exchangeRate'],
-    queryFn: getExchangeRate,
-    staleTime: 30 * 60 * 1000, // 30분
-  });
+  const { data: exchangeData } = useSuspenseQuery(exchangeRateQueryOptions());
 
   const exchangeRate = exchangeData.exchangeRate[currency];
 
@@ -137,10 +132,7 @@ function ProductListContents({ currency }: { currency: CurrencyType }) {
     navigate(`/product/${productId}`);
   };
 
-  const { data } = useSuspenseQuery({
-    queryKey: ['productList'],
-    queryFn: getProductList,
-  });
+  const { data } = useSuspenseQuery(productListQueryOptions());
 
   const productList = data.products;
   const productListByCategory = {

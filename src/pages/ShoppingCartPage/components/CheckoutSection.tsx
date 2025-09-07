@@ -9,9 +9,10 @@ import { useAtomValue } from 'jotai';
 import { currencyAtom } from '@/atoms/currency';
 import { formatPrice } from '@/utils/price';
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { getExchangeRate } from '@/apis/exchange';
-import type { CartItem } from '@/atoms/cart';
+import { queryKeys as userQueryKeys } from '@/apis/userInfo';
+import { exchangeRateQueryOptions } from '@/apis/exchange';
 import { purchaseProducts, type PurchaseRequest } from '@/apis/product';
+import type { CartItem } from '@/atoms/cart';
 
 function CheckoutSection({
   cartItems,
@@ -28,11 +29,7 @@ function CheckoutSection({
   const queryClient = useQueryClient();
   const currency = useAtomValue(currencyAtom);
 
-  const { data: exchangeData } = useSuspenseQuery({
-    queryKey: ['exchangeRate'],
-    queryFn: getExchangeRate,
-    staleTime: 30 * 60 * 1000,
-  });
+  const { data: exchangeData } = useSuspenseQuery(exchangeRateQueryOptions());
 
   const exchangeRate = exchangeData.exchangeRate[currency];
 
@@ -52,7 +49,7 @@ function CheckoutSection({
       setCartItems(() => ({}));
 
       // 사용자 정보 최신화 (포인트/등급)
-      await queryClient.invalidateQueries({ queryKey: ['userInfo'] });
+      await queryClient.invalidateQueries({ queryKey: userQueryKeys.userInfo() });
 
       toast.success('결제가 완료되었습니다.');
       await delay(SECOND * 3);

@@ -1,12 +1,12 @@
 import { Flex, styled } from 'styled-system/jsx';
 import { Spacing, Text } from '@/ui-lib';
-import { getRecentProducts } from '@/apis/product';
-import { type RecentProduct } from '@/apis/types';
+import { recentProductsQueryOptions, queryKeys as productQueryKeys } from '@/apis/product';
+import { exchangeRateQueryOptions } from '@/apis/exchange';
+import { type CurrencyType } from '@/atoms/currency';
 import { formatPrice } from '@/utils/price';
 import { useSuspenseQuery, useQueryClient } from '@tanstack/react-query';
-import { getExchangeRate } from '@/apis/exchange';
-import { type CurrencyType } from '@/atoms/currency';
 import DataWrapper from '@/components/DataWrapper';
+import { type RecentProduct } from '@/apis/types';
 
 interface Props {
   product: RecentProduct;
@@ -43,7 +43,7 @@ function RecentPurchaseSection({ currency }: { currency: CurrencyType }) {
   const queryClient = useQueryClient();
 
   const handleRetry = () => {
-    queryClient.invalidateQueries({ queryKey: ['recentProducts'] });
+    queryClient.invalidateQueries({ queryKey: productQueryKeys.recentProducts() });
   };
 
   return (
@@ -58,11 +58,7 @@ function RecentPurchaseSection({ currency }: { currency: CurrencyType }) {
 }
 
 function RecentPurchaseContents({ currency }: { currency: CurrencyType }) {
-  const { data: exchangeData } = useSuspenseQuery({
-    queryKey: ['exchangeRate'],
-    queryFn: getExchangeRate,
-    staleTime: 30 * 60 * 1000,
-  });
+  const { data: exchangeData } = useSuspenseQuery(exchangeRateQueryOptions());
 
   const exchangeRate = exchangeData.exchangeRate[currency];
 
@@ -70,10 +66,7 @@ function RecentPurchaseContents({ currency }: { currency: CurrencyType }) {
     return formatPrice(price * exchangeRate, currency);
   };
 
-  const { data } = useSuspenseQuery({
-    queryKey: ['recentProducts'],
-    queryFn: getRecentProducts,
-  });
+  const { data } = useSuspenseQuery(recentProductsQueryOptions());
 
   const recentProducts = data.recentProducts;
 

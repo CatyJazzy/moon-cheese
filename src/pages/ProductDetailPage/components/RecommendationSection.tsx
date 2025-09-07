@@ -3,31 +3,21 @@ import { useNavigate } from 'react-router';
 import { HStack, styled } from 'styled-system/jsx';
 import RecommendationProductItem from './RecommendationProductItem';
 import { useSuspenseQuery, useQueries } from '@tanstack/react-query';
-import { getRecommendations, getProductInfo } from '@/apis/product';
+import { recommendedProductIdsQueryOptions, productInfoQueryOptions } from '@/apis/product';
+import { exchangeRateQueryOptions } from '@/apis/exchange';
 import { formatPrice } from '@/utils/price';
-import { getExchangeRate } from '@/apis/exchange';
 import { type CurrencyType } from '@/atoms/currency';
 import Loading from '@/components/Loading';
 
 function RecommendationSection({ productId, currency }: { productId: number; currency: CurrencyType }) {
-  const { data: productIds } = useSuspenseQuery({
-    queryKey: ['recommendedProductIds', productId],
-    queryFn: () => getRecommendations(productId),
-  });
+  const { data: productIds } = useSuspenseQuery(recommendedProductIdsQueryOptions(productId));
 
-  const { data: exchangeData } = useSuspenseQuery({
-    queryKey: ['exchangeRate'],
-    queryFn: getExchangeRate,
-    staleTime: 30 * 60 * 1000,
-  });
+  const { data: exchangeData } = useSuspenseQuery(exchangeRateQueryOptions());
 
   const exchangeRate = exchangeData.exchangeRate[currency];
 
   const productQueries = useQueries({
-    queries: productIds.recommendProductIds.map((id: number) => ({
-      queryKey: ['product', id],
-      queryFn: () => getProductInfo(id),
-    })),
+    queries: productIds.recommendProductIds.map((id: number) => productInfoQueryOptions(id)),
   });
 
   const isLoading = productQueries.some(query => query.isLoading);

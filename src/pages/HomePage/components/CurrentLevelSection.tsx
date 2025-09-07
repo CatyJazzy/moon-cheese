@@ -1,6 +1,7 @@
 import { Box, Flex, styled } from 'styled-system/jsx';
 import { ProgressBar, Spacing, Text } from '@/ui-lib';
-import { getUserInfo, getGradePointList } from '@/apis/userInfo';
+import { userInfoQueryOptions, queryKeys as userQueryKeys } from '@/apis/userInfo';
+import { gradePointQueryOptions, queryKeys as gradeQueryKeys } from '@/apis/grade';
 import { useSuspenseQueries, useQueryClient } from '@tanstack/react-query';
 import DataWrapper from '@/components/DataWrapper';
 
@@ -8,8 +9,8 @@ function CurrentLevelSection() {
   const queryClient = useQueryClient();
 
   const handleRetry = () => {
-    queryClient.invalidateQueries({ queryKey: ['userInfo'] });
-    queryClient.invalidateQueries({ queryKey: ['gradeInfo'] });
+    queryClient.invalidateQueries({ queryKey: userQueryKeys.userInfo() });
+    queryClient.invalidateQueries({ queryKey: gradeQueryKeys.gradePoint() });
   };
 
   return (
@@ -27,16 +28,7 @@ function CurrentLevelSection() {
 
 function CurrentLevelContents() {
   const [{ data: userInfo }, { data: gradeInfo }] = useSuspenseQueries({
-    queries: [
-      {
-        queryKey: ['userInfo'],
-        queryFn: getUserInfo,
-      },
-      {
-        queryKey: ['gradeInfo'],
-        queryFn: getGradePointList,
-      },
-    ],
+    queries: [userInfoQueryOptions(), gradePointQueryOptions()],
   });
 
   const getNextGradeInfo = () => {

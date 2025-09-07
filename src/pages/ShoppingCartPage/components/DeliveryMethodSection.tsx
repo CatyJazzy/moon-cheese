@@ -2,12 +2,13 @@ import { Flex, Stack, styled } from 'styled-system/jsx';
 import { Spacing, Text } from '@/ui-lib';
 import { DeliveryIcon, RocketIcon } from '@/ui-lib/components/icons';
 import { useSuspenseQuery } from '@tanstack/react-query';
-import { getUserInfo, getGradeShippingList } from '@/apis/userInfo';
+import { userInfoQueryOptions } from '@/apis/userInfo';
+import { gradeShippingQueryOptions } from '@/apis/grade';
+import { exchangeRateQueryOptions } from '@/apis/exchange';
+import { formatPrice } from '@/utils/price';
 import { useAtomValue } from 'jotai';
 import { cartItemsAtom } from '@/atoms/cart';
 import { currencyAtom } from '@/atoms/currency';
-import { formatPrice } from '@/utils/price';
-import { getExchangeRate } from '@/apis/exchange';
 
 function DeliveryMethodSection({
   selectedDeliveryMethod,
@@ -18,23 +19,11 @@ function DeliveryMethodSection({
   onDeliveryMethodChange: (method: string) => void;
   onShippingFeeChange: (fee: number) => void;
 }) {
-  const { data: userInfo } = useSuspenseQuery({
-    queryKey: ['userInfo'],
-    queryFn: getUserInfo,
-  });
-
-  const { data: gradeShippingData } = useSuspenseQuery({
-    queryKey: ['gradeShipping'],
-    queryFn: getGradeShippingList,
-  });
+  const { data: userInfo } = useSuspenseQuery(userInfoQueryOptions());
+  const { data: gradeShippingData } = useSuspenseQuery(gradeShippingQueryOptions());
   const cartItems = useAtomValue(cartItemsAtom);
   const currency = useAtomValue(currencyAtom);
-
-  const { data: exchangeData } = useSuspenseQuery({
-    queryKey: ['exchangeRate'],
-    queryFn: getExchangeRate,
-    staleTime: 30 * 60 * 1000,
-  });
+  const { data: exchangeData } = useSuspenseQuery(exchangeRateQueryOptions());
 
   const exchangeRate = exchangeData.exchangeRate[currency];
 
